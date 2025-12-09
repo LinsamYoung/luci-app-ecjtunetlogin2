@@ -21,12 +21,27 @@ ECJTU 校园网自动登录（OpenWrt LuCI 应用）。本项目提供：
 
 ## 目录结构
 
-- [luasrc/controller/ecjtunetlogin2.lua](luasrc/controller/ecjtunetlogin2.lua)：注册菜单，路径“系统管理 > 服务 > ECJTU 校园网自动登录”
-- [luasrc/model/cbi/ecjtunetlogin2/main.lua](luasrc/model/cbi/ecjtunetlogin2/main.lua)：CBI 表单（用户名、密码、运营商、自启、检测间隔）与服务状态展示
-- [ecjtunetlogin2.init](ecjtunetlogin2.init)：procd 服务定义，启动 `/usr/bin/python3 /usr/share/ecjtunetlogin2/campus_login.py`
-- [ecjtunetlogin2.config](ecjtunetlogin2.config)：默认 UCI 配置
-- [campus_login.py](campus_login.py)：自动登录主逻辑
-- [Makefile](Makefile)：OpenWrt 打包定义
+```
+luci-app-ecjtunetlogin2/
+|- Makefile                                OpenWrt 打包定义
+|- ecjtunetlogin2.config                   默认 UCI 配置
+|- ecjtunetlogin2.init                     procd 服务定义，启动 `/usr/bin/python3 /usr/share/ecjtunetlogin2/campus_login.py`
+|- campus_login.py                         自动登录主脚本
+|- luasrc/
+|  |- controller/
+|  |  |- ecjtunetlogin2.lua                注册菜单，路径“系统管理 > 服务 > ECJTU 校园网自动登录”
+|  |- model/
+|     |- cbi/
+|        |- ecjtunetlogin2/
+|           |- main.lua                    CBI 表单（用户名、密码、运营商、自启、检测间隔）与服务状态展示
+```
+
+- [luasrc/controller/ecjtunetlogin2.lua](luasrc/controller/ecjtunetlogin2.lua)：
+- [luasrc/model/cbi/ecjtunetlogin2/main.lua](luasrc/model/cbi/ecjtunetlogin2/main.lua)：
+- [ecjtunetlogin2.init](ecjtunetlogin2.init)：
+- [ecjtunetlogin2.config](ecjtunetlogin2.config)：
+- [campus_login.py](campus_login.py)：
+- [Makefile](Makefile)：
 
 ## 工作原理
 
