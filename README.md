@@ -1,4 +1,4 @@
-# luci-app-ecjtunetlogin2
+# luci-app-ecjtunetlogin2 华东交通大学校园网自动登录插件（OpenWrt LuCI 应用）
 
 ECJTU 校园网自动登录（OpenWrt LuCI 应用）。本项目提供：
 - 一个 LuCI 界面用于配置校园网账号与运行参数
