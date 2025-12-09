@@ -5,6 +5,8 @@ ECJTU 校园网自动登录（OpenWrt LuCI 应用）。本项目提供：
 - 一个 LuCI 界面用于配置校园网账号与运行参数
 - 一个 procd 管理的开机自启服务
 - 一个 Python 自动登录脚本，周期检测网络并在被强制门户拦截时发起登录
+  
+![ECJTUNet Demo](https://raw.githubusercontent.com/LinsamYoung/pic/8710ac0c6dc82cfcd8a5708f4fc0530973912f81/ecjtunetdemo.png)
 
 - LuCI 控制器：[`luci.controller.ecjtunetlogin2`](luasrc/controller/ecjtunetlogin2.lua)
 - LuCI CBI 配置页：[`luasrc/model/cbi/ecjtunetlogin2/main.lua`](luasrc/model/cbi/ecjtunetlogin2/main.lua)
