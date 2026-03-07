@@ -7,9 +7,11 @@ USE_PROCD=1
 
 PROG_NAME="ECJTU Network Auto Login"
 PROG_PATH="/usr/share/ecjtunetlogin2/campus_login.py"
+LOG_PATH="/tmp/ecjtunetlogin2.log"
 
 start_service() {
     echo "Starting ${PROG_NAME}..."
+    touch "${LOG_PATH}" 2>/dev/null
     procd_open_instance
     procd_set_param stdout 1        # 打到日志
     procd_set_param stderr 1        # 打到日志

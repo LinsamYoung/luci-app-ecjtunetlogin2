@@ -1,11 +1,65 @@
 #!/usr/bin/python3
+import os
 import requests
 import urllib.parse
-import re
 import time
 import sys
 import socket  # 用于获取 IP
 import subprocess  # 用于从 UCI 读取配置
+import traceback
+
+LOG_PATH = "/tmp/ecjtunetlogin2.log"
+
+class TeeStream:
+    def __init__(self, original_stream, log_stream):
+        self.original_stream = original_stream
+        self.log_stream = log_stream
+        self.encoding = getattr(original_stream, "encoding", "utf-8")
+        self.errors = getattr(original_stream, "errors", "replace")
+
+    def write(self, data):
+        if not data:
+            return 0
+        self.original_stream.write(data)
+        self.log_stream.write(data)
+        return len(data)
+
+    def flush(self):
+        self.original_stream.flush()
+        self.log_stream.flush()
+
+    def isatty(self):
+        return getattr(self.original_stream, "isatty", lambda: False)()
+
+    def writelines(self, lines):
+        for line in lines:
+            self.write(line)
+
+
+def setup_logging():
+    try:
+        log_dir = os.path.dirname(LOG_PATH)
+        if log_dir:
+            os.makedirs(log_dir, exist_ok=True)
+        log_stream = open(LOG_PATH, "a", encoding="utf-8", buffering=1)
+    except OSError as e:
+        print(f"[!] 无法打开日志文件 {LOG_PATH}: {e}", file=sys.__stderr__)
+        return
+
+    sys.stdout = TeeStream(sys.stdout, log_stream)
+    sys.stderr = TeeStream(sys.stderr, log_stream)
+
+    def handle_exception(exc_type, exc_value, exc_tb):
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc_value, exc_tb)
+            return
+        print("[!] 脚本发生未捕获异常：", file=sys.stderr)
+        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stderr)
+
+    sys.excepthook = handle_exception
+
+
+setup_logging()
 
 # --- 从 UCI 读取用户凭据和日志配置 ---
 def get_uci_option(section, option, default=""):
@@ -30,7 +84,7 @@ OPERATOR_SUFFIX = get_uci_option(UCI_SECTION, "operator_suffix", "@cmcc")
 
 # --- 用户可读提示 ---
 print(f"[*] 当前配置的账号: {USERNAME}{OPERATOR_SUFFIX}")
-
+print(f"[*] 日志文件: {LOG_PATH}")
 
 # --- 网络配置 ---
 LOGIN_PAGE_IP = "172.16.2.100"
