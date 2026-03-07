@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-ecjtunetlogin2
-PKG_VERSION:=1.1 #PKG_VERSION表示软件包的版本号
-PKG_RELEASE:=1 #PKG_RELEASE表示软件包的发布版本
+PKG_VERSION:=1.1.0
+PKG_RELEASE:=1
 
 PKG_MAINTAINER:=ECJTU
 PKG_LICENSE:=MIT
@@ -13,32 +13,32 @@ LUCI_PKGARCH:=all
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-    SECTION:=luci
-    CATEGORY:=LuCI
-    SUBMENU:=3. Applications
-    TITLE:=$(LUCI_TITLE)
-    DEPENDS:=+luci-base +python3 +python3-requests
+  SECTION:=luci
+  CATEGORY:=LuCI
+  SUBMENU:=3. Applications
+  TITLE:=$(LUCI_TITLE)
+  DEPENDS:=+luci-base +python3 +python3-requests
 endef
 
 define Package/$(PKG_NAME)/description
-    LuCI interface and service for ECJTU campus network auto login (ecjtunetlogin2).
+  LuCI interface and service for ECJTU campus network auto login (ecjtunetlogin2).
 endef
 
 define Package/$(PKG_NAME)/conffiles
 /etc/config/ecjtunetlogin2
 endef
 
-# 不需要编译源码，跳过 configure/compile 阶段
+# 不需要编译源码，用占位符
 define Build/Prepare
-
+  true
 endef
 
 define Build/Configure
-
+  true
 endef
 
 define Build/Compile
-    
+  true
 endef
 
 define Package/$(PKG_NAME)/install
