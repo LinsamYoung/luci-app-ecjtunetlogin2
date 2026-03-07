@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-ecjtunetlogin2
-PKG_VERSION:=1.0
-PKG_RELEASE:=1
+PKG_VERSION:=1.1 #PKG_VERSION表示软件包的版本号
+PKG_RELEASE:=1.1 #PKG_RELEASE表示软件包的发布版本
 
 PKG_MAINTAINER:=ECJTU
 PKG_LICENSE:=MIT
