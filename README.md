@@ -69,19 +69,31 @@ luci-app-ecjtunetlogin2/
 
 1) 使用 OpenWrt SDK 编译 IPK
 - 将本仓库放入 SDK 的 `package/` 目录
-- 选择包并编译
+
 
 ```bash
-# 进入 OpenWrt SDK 根目录
+#在 OpenWrt 目录执行：
+make dirclean
+#然后重新配置：
 make menuconfig
+#根据目标环境选择：
+Target System  → x86
+Subtarget      → x86_64
+Target Profile → Generic x86/64
+
+#选择编译包：
 # LuCI -> Applications -> luci-app-ecjtunetlogin2 选中 <*> 或 <M>
+
+#然后先编译 工具链：
+make toolchain/install -j$(nproc) V=s
+#最后编译包：
 make package/luci-app-ecjtunetlogin2/compile V=s
 ```
 
 - 安装生成的 IPK（路径参考 SDK bin 目录）
 
 ```bash
-opkg install /path/to/luci-app-ecjtunetlogin2_*.ipk
+opkg install /path/to/luci-app-ecjtunetlogin2.ipk
 ```
 
 2) 或者手动部署（开发测试）
