@@ -60,13 +60,30 @@ o.datatype = "uinteger"
 o.placeholder = "60"
 o.default = "60"
 
+o = s:option(Value, "static_mac", translate("静态 MAC"),
+    translate("留空自动检测。格式：00-00-00-00-00-00 或 aabbccddeeff。"))
+o.placeholder = translate("留空 = 自动检测")
+o.rmempty  = true
+
 o = s:option(DummyValue, "_log", translate("运行日志"))
 o.rawhtml = true
 function o.cfgvalue()
     return string.format(
-        "<div><div style='margin-bottom:6px;color:#666'>%s</div>\
-         <textarea readonly wrap='off' style='width:100%%;min-height:360px;font-family:monospace'>%s</textarea></div>",
-        util.pcdata(translate("最近 120 行；保存后刷新页面查看最新输出。")),
+        "<div id='logarea'><div style='margin-bottom:6px;color:#666'>%s</div>\
+         <textarea id='logbox' readonly wrap='off' style='width:100%%;min-height:360px;font-family:monospace'>%s</textarea></div>\
+         <script>(function(){setInterval(function(){\
+           var x=new XMLHttpRequest();\
+           x.open('GET',location.href,true);\
+           x.onload=function(){\
+             var s=x.responseText;\
+             var a=s.indexOf('<textarea');\
+             var b=s.indexOf('</textarea>',a);\
+             if(a>0){\
+               var c=s.indexOf('>',a);\
+               document.getElementById('logbox').value=s.substring(c+1,b);\
+             }\
+           };x.send()},3000)})()</script>",
+        util.pcdata(translate("每 3 秒自动刷新。")),
         util.pcdata(tail(120))
     )
 end
