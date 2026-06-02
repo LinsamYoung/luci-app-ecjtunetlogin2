@@ -1,61 +1,104 @@
-# luci-app-ecjtunetlogin2 
-## 华东交通大学校园网自动登录插件（OpenWrt LuCI 应用）
+# ecjtunetlogin2 (Rust)
 
-ECJTU 校园网自动登录（OpenWrt LuCI 应用）。本项目提供：
-- 一个 LuCI 界面用于配置校园网账号与运行参数
-- 一个 procd 管理的开机自启服务
-- 一个 Python 自动登录脚本，周期检测网络并在被强制门户拦截时发起登录
-  
-![ECJTUNet Demo](https://raw.githubusercontent.com/LinsamYoung/pic/8710ac0c6dc82cfcd8a5708f4fc0530973912f81/ecjtunetdemo.png)
+## 华东交通大学校园网自动登录（OpenWrt LuCI + Rust 守护进程）
 
-- LuCI 控制器：[`luci.controller.ecjtunetlogin2`](luasrc/controller/ecjtunetlogin2.lua)
+v2.0 已用 Rust 重写核心登录守护进程，编译为单个静态二进制，零运行时依赖。兼容 OpenWrt 25.12+ APK 包管理。
+
+- LuCI 控制器：[`luasrc/controller/ecjtunetlogin2.lua`](luasrc/controller/ecjtunetlogin2.lua)
 - LuCI CBI 配置页：[`luasrc/model/cbi/ecjtunetlogin2/main.lua`](luasrc/model/cbi/ecjtunetlogin2/main.lua)
-- 初始化脚本（procd）：[`ecjtunetlogin2.init`](ecjtunetlogin2.init)
-- 默认配置：[`ecjtunetlogin2.config`](ecjtunetlogin2.config)
-- 核心登录脚本：[`campus_login.py`](campus_login.py)
-- OpenWrt 打包脚本：[`Makefile`](Makefile)
+- procd init：[`ecjtunetlogin2.init`](ecjtunetlogin2.init)
+- 默认 UCI 配置：[`ecjtunetlogin2.config`](ecjtunetlogin2.config)
+- Rust 守护进程：[`src/main.rs`](src/main.rs)
+- 构建定义：[`Cargo.toml`](Cargo.toml) / [`Makefile`](Makefile)
 
 ## 功能特性
 
-- LuCI 页面配置学号/密码、运营商后缀、检查间隔与自启开关
-- 后台服务按间隔检测连通性，自动登录门户
-- 使用 procd 管理，异常退出自动重启
-- 轻量依赖：`python3` 和 `python3-requests`
+- LuCI 页面配置学号/密码、运营商后缀、检测间隔、自启开关
+- Rust 守护进程循环检测连通性并自动登录校园网门户
+- procd 管理，异常退出自动重启
+- **零运行时依赖**（Rust 编译为静态二进制，无需 python3）
+- 兼容 OpenWrt 25.12+ APK 包管理
 
 ## 目录结构
 
 ```
-luci-app-ecjtunetlogin2/
-|- Makefile                                OpenWrt 打包定义
-|- ecjtunetlogin2.config                   默认 UCI 配置
-|- ecjtunetlogin2.init                     procd 服务定义，启动 `/usr/bin/python3 /usr/share/ecjtunetlogin2/campus_login.py`
-|- campus_login.py                         自动登录主脚本
-|- luasrc/
-|  |- controller/
-|  |  |- ecjtunetlogin2.lua                注册菜单，路径“系统管理 > 服务 > ECJTU 校园网自动登录”
-|  |- model/
-|     |- cbi/
-|        |- ecjtunetlogin2/
-|           |- main.lua                    CBI 表单（用户名、密码、运营商、自启、检测间隔）与服务状态展示
+├── Cargo.toml                  Rust 项目定义
+├── src/
+│   └── main.rs                 登录守护进程（Rust）
+├── Makefile                    OpenWrt APK 打包
+├── ecjtunetlogin2.config       默认 UCI 配置
+├── ecjtunetlogin2.init         procd init 脚本
+└── luasrc/
+    ├── controller/
+    │   └── ecjtunetlogin2.lua  LuCI 菜单注册
+    └── model/cbi/ecjtunetlogin2/
+        └── main.lua            LuCI 配置页面
 ```
 
-- [luasrc/controller/ecjtunetlogin2.lua](luasrc/controller/ecjtunetlogin2.lua)：
-- [luasrc/model/cbi/ecjtunetlogin2/main.lua](luasrc/model/cbi/ecjtunetlogin2/main.lua)：
-- [ecjtunetlogin2.init](ecjtunetlogin2.init)：
-- [ecjtunetlogin2.config](ecjtunetlogin2.config)：
-- [campus_login.py](campus_login.py)：
-- [Makefile](Makefile)：
+## 依赖
+
+- OpenWrt 25.12+（LuCI + APK）
+- 包依赖：`+luci-base`（Rust 守护进程无运行时依赖）
+- 编译依赖：Rust 工具链（`rust/host`）
+
+## 编译 & 安装
+
+### 1. 使用 OpenWrt SDK 编译 APK
+
+```bash
+# 将项目放入 SDK 的 package/ 目录
+make menuconfig
+#   Target System  → (你的目标)
+#   LuCI → Applications → ecjtunetlogin2  <M>
+
+make package/ecjtunetlogin2/compile V=s
+```
+
+### 2. 安装
+
+```bash
+# OpenWrt 25.12+ 使用 apk 管理包
+apk add /path/to/ecjtunetlogin2_*.apk
+```
+
+### 3. 手动部署（开发测试）
+
+```bash
+# 交叉编译 Rust 二进制
+cargo build --release --target mipsel-unknown-linux-musl
+
+# 拷贝到设备
+scp target/mipsel-unknown-linux-musl/release/ecjtunetlogin2 root@router:/usr/bin/
+scp ecjtunetlogin2.init root@router:/etc/init.d/ecjtunetlogin2
+scp ecjtunetlogin2.config root@router:/etc/config/ecjtunetlogin2
+scp -r luasrc/* root@router:/usr/lib/lua/luci/
+
+# 启动
+ssh root@router '/etc/init.d/ecjtunetlogin2 enable && /etc/init.d/ecjtunetlogin2 start'
+```
 
 ## 工作原理
 
-- LuCI 界面写入 UCI 配置 `ecjtunetlogin2.main.*`
-- 开机时由 init 脚本读取 `start_on_boot` 决定是否启动服务
-- 后台脚本循环：
-  1. 检测互联网可达性（[`campus_login.check_connection`](campus_login.py)）
-  2. 不可达则尝试登录（[`campus_login.login`](campus_login.py)）
-  3. 读取配置（[`campus_login.get_uci_option`](campus_login.py)）
-  4. 自动获取本机 IP（[`campus_login.get_local_ip`](campus_login.py)）
-- LuCI 状态通过 pgrep 检测脚本进程显示“运行中/未运行”
+```
+┌──────────┐    UCI 配置     ┌──────────────┐
+│  LuCI    │ ──────────────> │ /etc/config/  │
+│  页面    │                 │ ecjtunetlogin2│
+└──────────┘                 └──────┬───────┘
+                                    │ uci get
+┌──────────┐   procd 管理    ┌──────▼───────┐
+│  init.d  │ ──────────────> │ecjtunetlogin2 │  Rust 守护进程
+│  脚本    │                 │  /usr/bin/    │
+└──────────┘                 └──────┬───────┘
+                                    │ 循环检测
+                              ┌──────▼───────┐
+                              │ check_conn() │  HTTP HEAD
+                              │ login()      │  POST 登录
+                              └──────────────┘
+```
+
+1. LuCI 写入 UCI 配置 `ecjtunetlogin2.main.*`
+2. init 脚本读取 `start_on_boot` 决定是否启动守护进程
+3. Rust 守护进程循环：检测连通性 → 不可达则 POST 登录校园网 → sleep → 重复
 
 提示：
 - 当前脚本使用固定 MAC（STATIC_MAC），如目标门户需要真实 MAC，可能导致登录失败。请按需修改 [`campus_login.py`](campus_login.py) 中的配置。
