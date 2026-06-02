@@ -1,68 +1,58 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=luci-app-ecjtunetlogin2
-PKG_VERSION:=1.1.0
+PKG_NAME:=ecjtunetlogin2
+PKG_VERSION:=2.0.0
 PKG_RELEASE:=1
 
 PKG_MAINTAINER:=ECJTU
 PKG_LICENSE:=MIT
 
-LUCI_TITLE:=ECJTU Campus Network Auto Login
-LUCI_PKGARCH:=all
+PKG_BUILD_DEPENDS:=rust/host
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/$(PKG_NAME)
+define Package/ecjtunetlogin2
   SECTION:=luci
   CATEGORY:=LuCI
   SUBMENU:=3. Applications
-  TITLE:=$(LUCI_TITLE)
-  DEPENDS:=+luci-base +python3 +python3-requests
+  TITLE:=ECJTU Campus Network Auto Login (Rust)
+  DEPENDS:=+luci-base
+  PKGARCH:=$(ARCH)
 endef
 
-define Package/$(PKG_NAME)/description
-  LuCI interface and service for ECJTU campus network auto login (ecjtunetlogin2).
+define Package/ecjtunetlogin2/description
+  LuCI interface and Rust-powered daemon for ECJTU campus network auto login.
+  Compatible with OpenWrt 25.12+ APK package management.
 endef
 
-define Package/$(PKG_NAME)/conffiles
+define Package/ecjtunetlogin2/conffiles
 /etc/config/ecjtunetlogin2
 endef
 
-# 不需要编译源码，用占位符
-define Build/Prepare
-  true
-endef
-
-define Build/Configure
-  true
-endef
-
 define Build/Compile
-  true
+	cd $(PKG_BUILD_DIR) && \
+		CARGO_HOME=$(CARGO_HOME) \
+		cargo build --release \
+			--target $(RUST_TARGET)
 endef
 
-define Package/$(PKG_NAME)/install
-	# UCI 配置
+define Package/ecjtunetlogin2/install
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./ecjtunetlogin2.config $(1)/etc/config/ecjtunetlogin2
+	$(INSTALL_CONF) $(PKG_BUILD_DIR)/ecjtunetlogin2.config $(1)/etc/config/ecjtunetlogin2
 
-	# init 脚本
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./ecjtunetlogin2.init $(1)/etc/init.d/ecjtunetlogin2
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ecjtunetlogin2.init $(1)/etc/init.d/ecjtunetlogin2
 
-	# Python 脚本
-	$(INSTALL_DIR) $(1)/usr/share/ecjtunetlogin2
-	$(INSTALL_BIN) ./campus_login.py $(1)/usr/share/ecjtunetlogin2/campus_login.py
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/target/$(RUST_TARGET)/release/ecjtunetlogin2 $(1)/usr/bin/ecjtunetlogin2
 
-	# LuCI controller
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
-	$(INSTALL_DATA) ./luasrc/controller/ecjtunetlogin2.lua \
-	    $(1)/usr/lib/lua/luci/controller/ecjtunetlogin2.lua
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/luasrc/controller/ecjtunetlogin2.lua \
+		$(1)/usr/lib/lua/luci/controller/ecjtunetlogin2.lua
 
-	# LuCI CBI model
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/model/cbi/ecjtunetlogin2
-	$(INSTALL_DATA) ./luasrc/model/cbi/ecjtunetlogin2/main.lua \
-	    $(1)/usr/lib/lua/luci/model/cbi/ecjtunetlogin2/main.lua
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/luasrc/model/cbi/ecjtunetlogin2/main.lua \
+		$(1)/usr/lib/lua/luci/model/cbi/ecjtunetlogin2/main.lua
 endef
 
-$(eval $(call BuildPackage,$(PKG_NAME)))
+$(eval $(call BuildPackage,ecjtunetlogin2))
