@@ -3,8 +3,7 @@ name = "ecjtunetlogin2"
 version = "2.0.0"
 edition = "2021"
 
-[dependencies]
-ureq = "2"
+# 零外部依赖 — 纯 HTTP，仅用 std
 
 [profile.release]
 opt-level = "z"

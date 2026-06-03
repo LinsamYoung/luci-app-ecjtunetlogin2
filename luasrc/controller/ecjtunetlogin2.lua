@@ -1,12 +1,20 @@
 module("luci.controller.ecjtunetlogin2", package.seeall)
 
 function index()
-    -- 只有在配置存在时才显示菜单
     if not nixio.fs.access("/etc/config/ecjtunetlogin2") then
         return
     end
 
-    entry({"admin", "services", "ecjtunetlogin2"},
-        cbi("ecjtunetlogin2/main"),
-        _("ECJTU 校园网自动登录"), 60).dependent = true
+    local page = entry({"admin", "services", "ecjtunetlogin2"},
+        alias("admin", "services", "ecjtunetlogin2", "basic"),
+        _("ECJTU 校园网自动登录"), 60)
+    page.dependent = true
+
+    entry({"admin", "services", "ecjtunetlogin2", "basic"},
+        cbi("ecjtunetlogin2/basic"),
+        _("基本设置"), 10).leaf = true
+
+    entry({"admin", "services", "ecjtunetlogin2", "debug"},
+        cbi("ecjtunetlogin2/debug"),
+        _("调试"), 20).leaf = true
 end
