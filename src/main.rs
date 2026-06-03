@@ -217,6 +217,16 @@ fn truncate_log(max_lines: usize) {
     let _ = std::fs::write(LOG_PATH, trimmed);
 }
 
+/// 发送注销请求（模拟门户页面注销按钮）
+fn logout() {
+    log!("[*] 正在注销当前登录…");
+    let path = "/2.htm?ACLogOut=1";
+    match http("POST", "172.16.2.100:80", path, &[], None) {
+        Some(_) => log!("[*] 注销请求已发送。"),
+        None => log!("[*] 注销请求失败（忽略）。"),
+    }
+}
+
 fn main() {
     let user = uci_get("username", "2022011007000206");
     let pass = uci_get("password", "hxa36580");
@@ -237,6 +247,12 @@ fn main() {
         if check_connection() {
             log!("[*] 当前已联网，{interval} 秒后再次检测。");
         } else {
+            let do_logout = uci_get("logout_before_login", "1") == "1";
+            if do_logout {
+                log!("[*] 网络未连接，先注销再登录…");
+                logout();
+                thread::sleep(Duration::from_secs(1));
+            }
             log!("[*] 网络未连接或检测到强制门户。正在尝试登录...");
             if login(&user, &pass, &suffix, &static_mac) {
                 log!("[*] 本次自动登录成功。");

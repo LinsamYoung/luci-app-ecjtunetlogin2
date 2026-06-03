@@ -66,6 +66,10 @@ o.datatype = "uinteger"
 o.placeholder = "60"
 o.default = "60"
 
+o = s:option(Flag, "logout_before_login", translate("登录前先注销"),
+    translate("勾选后每次断网先退出当前登录再执行登录。运营商为电信时建议开启。"))
+o.default = o.enabled
+
 m.on_after_commit = function()
     restart_service()
 end
