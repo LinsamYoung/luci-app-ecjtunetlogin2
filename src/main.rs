@@ -2,18 +2,21 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpStream, UdpSocket};
 use std::process::Command;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const LOG_PATH: &str = "/tmp/ecjtunetlogin2.log";
 const LOGIN_HOST: &str = "172.16.2.100:801";
-const STATIC_MAC: &str = "00-00-00-00-00-00";
 
 macro_rules! log {
     ($($arg:tt)*) => {{
         let msg = format!($($arg)*);
+        let ts = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
+        let secs = ts.as_secs();
+        let tm = format!("{:02}:{:02}:{:02}", (secs / 3600 + 8) % 24, (secs / 60) % 60, secs % 60);
+        let line = format!("[{}] {}\n", tm, msg);
         let _ = std::fs::OpenOptions::new()
             .append(true).create(true).open(LOG_PATH)
-            .map(|mut f| f.write_all(format!("{}\n", msg).as_bytes()));
+            .map(|mut f| f.write_all(line.as_bytes()));
         println!("{}", msg);
     }};
 }
@@ -140,7 +143,7 @@ fn get_portal_redirect_params() -> Option<(String, String)> {
 }
 
 /// Python login: 优先门户参数，回退本地 IP + 静态 MAC
-fn login(user: &str, pass: &str, suffix: &str) -> bool {
+fn login(user: &str, pass: &str, suffix: &str, static_mac: &str) -> bool {
     let (real_ip, real_mac) = if let Some((ip, mac)) = get_portal_redirect_params() {
         log!("[*] 使用门户提供的真实参数进行登录: IP={ip}, MAC={mac}"); (ip, mac)
     } else {
@@ -149,8 +152,8 @@ fn login(user: &str, pass: &str, suffix: &str) -> bool {
             Some(i) => { log!("[*] 检测到本地 IP 地址: {i}"); i }
             None => { log!("[!] 未能检测到必要的 IP 地址。无法继续。"); return false; }
         };
-        log!("[!] 警告: 使用本地检测 IP={ip}, 静态 MAC={STATIC_MAC}。");
-        (ip, STATIC_MAC.to_owned())
+        log!("[!] 警告: 使用本地检测 IP={ip}, 静态 MAC={static_mac}。");
+        (ip, static_mac.to_owned())
     };
 
     let query = format!(
@@ -201,31 +204,52 @@ fn login(user: &str, pass: &str, suffix: &str) -> bool {
     }
 }
 
+/// 截断日志：只保留末尾 max_lines 行
+fn truncate_log(max_lines: usize) {
+    if max_lines == 0 { return; }
+    let content = match std::fs::read_to_string(LOG_PATH) {
+        Ok(c) => c,
+        Err(_) => return,
+    };
+    let lines: Vec<&str> = content.lines().collect();
+    if lines.len() <= max_lines { return; }
+    let trimmed: String = lines[lines.len() - max_lines..].join("\n") + "\n";
+    let _ = std::fs::write(LOG_PATH, trimmed);
+}
+
 fn main() {
     let user = uci_get("username", "2022011007000206");
     let pass = uci_get("password", "hxa36580");
     let suffix = uci_get("operator_suffix", "@telecom");
-    let interval: u64 = uci_get("check_interval", "10").parse().unwrap_or(10);
+    let static_mac = uci_get("static_mac", "00-00-00-00-00-00");
+    let log_max_lines: usize = uci_get("log_max_lines", "1000").parse().unwrap_or(1000);
 
     log!("[*] 当前配置的账号: {user}{suffix}");
-    log!("[*] 日志文件: {LOG_PATH}");
+    log!("[*] 日志保留: {log_max_lines} 行");
     log!("[*] 开始校园网自动登录脚本 (门户重定向获取真实参数模式)...");
-    log!("[*] 检测间隔: {interval} 秒");
 
+    let mut tick: u64 = 0;
     loop {
+        // 每次循环读取间隔，支持热更新
+        let interval: u64 = uci_get("check_interval", "10").parse().unwrap_or(10);
         log!("");
-        log!("[*] 开始一次联网状态检测...");
+        log!("[*] 开始一次联网状态检测... (间隔={interval}s)");
         if check_connection() {
             log!("[*] 当前已联网，{interval} 秒后再次检测。");
         } else {
             log!("[*] 网络未连接或检测到强制门户。正在尝试登录...");
-            if login(&user, &pass, &suffix) {
+            if login(&user, &pass, &suffix, &static_mac) {
                 log!("[*] 本次自动登录成功。");
             } else {
                 log!("[!] 本次自动登录失败。");
             }
         }
         log!("[*] 等待 {interval} 秒后进行下一次检测...");
+
+        // 每 60 轮截断一次日志
+        tick += 1;
+        if tick % 60 == 0 { truncate_log(log_max_lines); }
+
         thread::sleep(Duration::from_secs(interval));
     }
 }

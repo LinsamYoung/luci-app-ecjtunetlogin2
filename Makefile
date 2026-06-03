@@ -53,6 +53,10 @@ define Package/luci-app-ecjtunetlogin2/install
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/model/cbi/ecjtunetlogin2
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/luasrc/model/cbi/ecjtunetlogin2/main.lua \
 		$(1)/usr/lib/lua/luci/model/cbi/ecjtunetlogin2/main.lua
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/luasrc/model/cbi/ecjtunetlogin2/basic.lua \
+		$(1)/usr/lib/lua/luci/model/cbi/ecjtunetlogin2/basic.lua
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/luasrc/model/cbi/ecjtunetlogin2/debug.lua \
+		$(1)/usr/lib/lua/luci/model/cbi/ecjtunetlogin2/debug.lua
 endef
 
 $(eval $(call BuildPackage,luci-app-ecjtunetlogin2))
